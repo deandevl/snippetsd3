@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="description" content="">
+    <meta charset="utf-8">
+    <title>D3 Page Template</title>
+  </head>
+  <body>
+    <div class="container">
+      <svg width="1200" height="800"></svg>
+    </div>
+    <script type="text/javascript" src="../d3.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+      const svg = d3.select('svg');
+      const svg_width = +svg.attr('width');
+      const svg_height = +svg.attr('height');
+
+      const margin = {top: 20, right: 20, bottom: 30, left: 40};
+      const chart_width = svg_width - margin.left - margin.right;
+      const chart_height = svg_height - margin.top - margin.bottom;
+
+      //define row_converter
+      const row_converter = (d,irow,columns) => {
+        return {
+          State: d.State,
+          Pop: d.Pop,
+          Value: +d.Value
+        };
+      };
+      //read tsv data file
+      async function show_chart(file_path){
+        const chart_g = svg.append('g')
+          .attr('transform', `translate(${margin.left}, ${margin.top})`);
+        const data = await d3.tsv(file_path,row_converter);
+
+        const keys = data.columns;
+        console.log(`Keys: ${keys}`);
+        console.log(`Raw Data: ${JSON.stringify(data)}`);
+
+        //group by State
+        const data_nested =
+          d3.nest()
+            .key(d => {
+              return d.State;
+            })
+            .entries(data);
+        //.map(data);
+        console.log(`Grouped by State: ${JSON.stringify(data_nested)}`);
+        //summarize the State groups
+        //get the number of entries for each State
+        const state_counts =
+          d3.nest()
+            .key(d => {
+              return d.State;
+            })
+            .rollup(v => {
+              return v.length;
+            })
+            .entries(data);
+        console.log(`State Counts: ${JSON.stringify(state_counts)}`);
+
+        //get the mean population for each State
+        const state_averages =
+          d3.nest()
+            .key(d => {
+              return d.State;
+            })
+            .rollup(v => {
+              return d3.mean(v,d => {
+                return d.Value;
+              });
+            })
+            .entries(data);
+        console.log(`State Pop Averages: ${JSON.stringify(state_averages)}`);
+
+        //get an object summary for each State
+        let global_min = 1.0e7;
+        let global_max = -1.0e7;
+        const state_metrics =
+          d3.nest()
+            .key(d => {
+              return d.State;
+            })
+            .rollup(v => {
+              const obj = {
+                count: v.length,
+                total: d3.sum(v, d => {
+                  return d.Value;
+                }),
+                avg: d3.mean(v, d => {
+                  return d.Value;
+                }),
+                min: d3.min(v, d => {
+                  return d.Value;
+                }),
+                max: d3.max(v, d => {
+                  return d.Value;
+                })
+              };
+              if(obj.min < global_min){
+                global_min = obj.min;
+              }
+              if(obj.max > global_max){
+                global_max = obj.max;
+              }
+              return obj;
+            })
+            .entries(data);
+        console.log(`State Metrics: ${JSON.stringify(state_metrics)}`);
+        console.log(`Global Min: ${global_min}`);
+        console.log(`Global Max: ${global_max}`);
+
+        //return an object output instead of an array output
+        const pop_sums =
+          d3.nest()
+            .key(d => {
+              return d.Pop;
+            })
+            .rollup(v => {
+              return d3.sum(v,d => {
+                return d.Value;
+              });
+            })
+            .object(data);
+        console.log(`Pop Sums Object: ${JSON.stringify(pop_sums)}`);
+
+        //multi-level nesting of State and Pop
+        const state_pop_nest =
+          d3.nest()
+            .key(d => {
+              return d.State;
+            })
+            .key(d => {
+              return d.Pop;
+            })
+            .object(data);
+        console.log(`Nested State & Pop: ${JSON.stringify(state_pop_nest)}`);
+
+      }
+      const file_path = 'data.tsv';
+      show_chart(file_path).catch(e => {
+        console.log(`There was a problem reading ${file_path}: ` + e.message);
+      })
+    </script>
+  </body>
+</html>

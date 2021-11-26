@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="description" content="">
+    <meta charset="utf-8">
+    <title>D3 Stacked Bars</title>
+  </head>
+  <body>
+    <div class="container">
+      <svg width="1200" height="800"></svg>
+    </div>
+    <script type="text/javascript" src="../d3.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+      const svg = d3.select('svg');
+      const svg_width = +svg.attr('width');
+      const svg_height = +svg.attr('height');
+
+      const margin = {top: 40, right: 20, bottom: 80, left: 80};
+      const chart_width = svg_width - margin.left - margin.right;
+      const chart_height = svg_height - margin.top - margin.bottom;
+
+      // define row_converter
+      const row_converter = (d,irow,columns) => {
+        return {
+          Month: d.Month,
+          Apples: +d.Apples,
+          Bananas: +d.Bananas,
+          Cherries: +d.Cherries,
+          Dates: +d.Dates
+        };
+      };
+      // read csv data file
+      // Note: see d3 API reference under 'd3.stack' for this example
+      //  and using d3.stack
+      async function show_chart(file_path) {
+        const data = await d3.csv('data.csv', row_converter);
+
+        // create one color array for each fruit using d3
+        //const colors = d3.scaleOrdinal(d3.schemeCategory10);
+        // get the Month column
+        const cat_keys = data.columns.slice(1);
+
+        // create a stack generator
+        const stack_generator = d3.stack()
+          .keys(cat_keys);
+
+        // pass data to the d3 stack generator
+        // Note: the columns are the months
+        //  with the lower and upper bound for each fruit
+        const data_stack = stack_generator(data);
+
+        // define x/y scales
+        // define the x scale
+        const x_keys = data.map(d => {
+          return d['Month'];
+        });
+        const x_scale = d3.scaleBand()
+          //.domain(d3.range(data.length))
+          .domain(x_keys)
+          .range([margin.left, svg_width-margin.right])
+          .paddingInner(0.05);
+
+        // define the y scale
+        // find the max value within the generated stack
+        let y_max = 0;
+        for(let i=0; i < data_stack.length; i++){
+          const row = data_stack[i];
+          for(let j=0; j < row.length; j++){
+            const max_val = d3.max(row[j]);
+            if(max_val > y_max){
+              y_max = max_val;
+            }
+          }
+        }
+        const y_scale = d3.scaleLinear()
+          .domain([0, y_max])
+          .range([svg_height-margin.bottom, margin.top]);
+
+        // add a group to svg to contain all retangles
+        const main_rect_g =
+          svg.append('g')
+            .attr('id','main_rect_g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        //add a group for each fruit (rows of data_stack)
+        // for grouping rect
+        const rect_group = main_rect_g.selectAll('g')
+          .data(data_stack).enter()
+          .append('g')
+          .attr('id','rect_group')
+          .style('fill', (d, i) => {
+            return d3.schemeCategory10[i];
+          });
+
+        //add a rect for each data value
+        rect_group.selectAll('rect')
+          .data(d => {
+            return d;  //returns a row(fruit) of data_stack
+          }).enter()
+          .append('rect')
+            .attr('x', (d, i) => {
+              return x_scale(x_keys[i]); //returns a column(month) of data_stack
+            })
+            .attr('y', d => {
+              return y_scale(d[1]); //returns the upper value of month/fruit
+            })
+            .attr('height', d => {
+              return y_scale(d[0]) - y_scale(d[1]); //returns scaled difference lower - upper value of month/fruit
+            })
+            .attr('width', x_scale.bandwidth());
+
+        // label each value
+        // add a group to svg to contain all text
+        const main_text_g =
+          svg.append('g')
+            .attr('id','main_text_g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        //add a group for each fruit (rows of data_stack)
+        // for grouping text
+        const text_group = main_text_g.selectAll('g')
+          .data(data_stack).enter()
+          .append('g')
+          .attr('id','text_group')
+
+        //add a rect for each data value
+        text_group.selectAll('text')
+          .data(d => {
+            return d;  //returns a row(fruit) of data_stack
+          }).enter()
+          .append('text')
+          .text((d) => {
+            return d[1]-d[0];
+          })
+            .attr('x', (d, i) => {
+              return x_scale(x_keys[i]) + x_scale.bandwidth()/2; //returns a column(month) of data_stack
+            })
+            .attr('y', d => {
+              return y_scale(d[1]-(d[1]-d[0])/2); //returns the upper value of month/fruit
+            })
+            .attr('font-size', '14px')
+            .attr('font-family', 'Verdana')
+            .attr('font-weight','bold')
+            .attr('fill', 'black')
+            .style('text-anchor','middle');
+
+        // define/place x axis
+        const xAxis = d3.axisBottom(x_scale);
+        const x_axis_g = main_rect_g.append('g')
+          .attr('transform', `translate(0,${svg_height-margin.bottom})`)
+          .call(xAxis);
+
+        // define/place y axis
+        const yAxis = d3.axisLeft(y_scale);
+        const y_axis_g = main_rect_g.append('g')
+          .attr('transform',`translate(${margin.left}, 0)`)
+          .call(yAxis);
+      }
+      const file_path = 'data.csv';
+      show_chart(file_path).catch(e => {
+        console.log(`There was an error reading ${file_path}: ` + e.message);
+      })
+    </script>
+  </body>
+</html>

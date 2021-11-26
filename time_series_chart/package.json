@@ -1,0 +1,31 @@
+{
+  "name": "time_series_chart",
+  "version": "0.1.0",
+  "description": "Displays a time series based chart using the d3 and VueJS libraries",
+  "scripts": {
+    "parcel-devel": "parcel --dist-dir=dist-devl ./public/index.html",
+    "parcel-prod-nooptimize": "parcel build --no-optimize --dist-dir=dist-prod ./public/index.html",
+    "parcel-prod-optimize": "parcel build --no-source-maps --dist-dir=dist-prod ./public/index.html",
+    "parcel-watch": "parcel watch --no-source-maps --dist-dir=dist-devl ./public/index.html"
+  },
+  "keywords": ["d3", "Vue"],
+  "author": "Rick Dean",
+  "license": "MIT",
+  "dependencies": {
+    "vue": "3.2.22",
+    "selectcomp": "git+https://github.com/deandevl/SelectComp.git",
+    "less": "^4.1.2",
+    "d3-selection": "^3.0.0",
+    "d3-time": "^3.0.0",
+    "d3-time-format": "^4.0.0",
+    "d3-fetch": "^3.0.1",
+    "d3-scale": "^4.0.2",
+    "d3-axis": "^3.0.0",
+    "d3-shape": "^3.0.1",
+    "d3-array": "^3.1.1"
+  },
+  "devDependencies": {
+    "parcel": "^2.0.1",
+    "@parcel/transformer-vue": "^2.0.1"
+  }
+}

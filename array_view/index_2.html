@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="description" content="">
+    <meta charset="utf-8">
+    <title>D3 Array View</title>
+  </head>
+  <body>
+    <div class="container">
+      <svg width="1200" height="800"></svg>
+    </div>
+    <script type="text/javascript" src="../d3.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+      const data = [
+        { name: '1', data: [1,2,3] },
+        { name: '2', data: [1,2,3] }
+      ];
+
+      const colourScale = ['red','blue','yellow'];
+
+      const svg = d3.select('svg');
+      const local = d3.local();
+
+      svg.selectAll('rect')
+        .data(data).enter()
+        .append('g').selectAll('rect')
+        .data(function(d,row_i,group){
+          local.set(this,row_i);
+          return d.data;
+        }).enter()
+        .append('rect')
+        .attr('x', function(d,col_i,group) {
+          return col_i*100;
+        })
+        .attr('y', function(d,col_i,group) {
+          return local.get(this)*100;
+        })
+        .attr('width', function() {
+          return 90;
+        })
+        .attr('height', function() {
+          return 90;
+        })
+        .attr('fill', function(d,col_i,group) {
+          return colourScale[col_i];
+        });
+    </script>
+  </body>
+</html>
